@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sorting Algorithm Visualizer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Sorting Algorithm Visualizer</h1>
+
+      <div class="controls">
+        <label for="array-size">Enter Array Size:</label>
+        <input type="number" id="array-size" min="5" max="50" value="20" />
+
+        <fieldset>
+          <legend>Choose Algorithms:</legend>
+          <label
+            ><input type="checkbox" class="algorithm-checkbox" value="bubble" />
+            Bubble Sort</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              class="algorithm-checkbox"
+              value="selection"
+            />
+            Selection Sort</label
+          >
+          <label
+            ><input
+              type="checkbox"
+              class="algorithm-checkbox"
+              value="insertion"
+            />
+            Insertion Sort</label
+          >
+          <label
+            ><input type="checkbox" class="algorithm-checkbox" value="merge" />
+            Merge Sort</label
+          >
+          <label
+            ><input type="checkbox" class="algorithm-checkbox" value="quick" />
+            Quick Sort</label
+          >
+        </fieldset>
+
+        <button id="startBtn">Start Comparison</button>
+        <button id="resetBtn">Reset Bars</button>
+      </div>
+
+      <div id="graphs-container" class="graphs-container"></div>
+      <div id="results" class="results"></div>
+    </div>
+
+    <script>
+      const graphsContainer = document.getElementById("graphs-container");
+      const startBtn = document.getElementById("startBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const algorithmCheckboxes = document.querySelectorAll(
+        ".algorithm-checkbox"
+      );
+      const arraySizeInput = document.getElementById("array-size");
+      const resultsContainer = document.getElementById("results");
+
+      // Generate bars for visualization
+      function generateBars(size) {
+        const bars = [];
+        for (let i = 0; i < size; i++) {
+          bars.push(Math.floor(Math.random() * 200) + 50);
+        }
+        return bars;
+      }
+
+      // Create graph container
+      function createGraph(algorithmName, bars) {
+        const graph = document.createElement("div");
+        graph.classList.add("graph");
+        graph.innerHTML = `
+        <h2>${algorithmName}</h2>
+        <div class="bars-container">
+          ${bars
+            .map(
+              (height) => `<div class="bar" style="height: ${height}px"></div>`
+            )
+            .join("")}
+        </div>
+      `;
+        graphsContainer.appendChild(graph);
+        return graph.querySelector(".bars-container").children;
+      }
+
+      // Delay function for visualization
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      // Bubble Sort
+      async function bubbleSort(bars) {
+        const startTime = performance.now();
+        for (let i = 0; i < bars.length - 1; i++) {
+          for (let j = 0; j < bars.length - i - 1; j++) {
+            bars[j].style.backgroundColor = "red";
+            bars[j + 1].style.backgroundColor = "red";
+            await sleep(50);
+            if (
+              parseInt(bars[j].style.height) >
+              parseInt(bars[j + 1].style.height)
+            ) {
+              [bars[j].style.height, bars[j + 1].style.height] = [
+                bars[j + 1].style.height,
+                bars[j].style.height,
+              ];
+            }
+            bars[j].style.backgroundColor = "blue";
+            bars[j + 1].style.backgroundColor = "blue";
+          }
+        }
+        return performance.now() - startTime;
+      }
+
+      // Selection Sort
+      async function selectionSort(bars) {
+        const startTime = performance.now();
+        for (let i = 0; i < bars.length - 1; i++) {
+          let minIdx = i;
+          bars[minIdx].style.backgroundColor = "red";
+          for (let j = i + 1; j < bars.length; j++) {
+            bars[j].style.backgroundColor = "red";
+            await sleep(50);
+            if (
+              parseInt(bars[j].style.height) <
+              parseInt(bars[minIdx].style.height)
+            ) {
+              bars[minIdx].style.backgroundColor = "blue";
+              minIdx = j;
+              bars[minIdx].style.backgroundColor = "red";
+            }
+            bars[j].style.backgroundColor = "blue";
+          }
+          [bars[i].style.height, bars[minIdx].style.height] = [
+            bars[minIdx].style.height,
+            bars[i].style.height,
+          ];
+          bars[minIdx].style.backgroundColor = "blue";
+          bars[i].style.backgroundColor = "green";
+        }
+        return performance.now() - startTime;
+      }
+
+      // Insertion Sort
+      async function insertionSort(bars) {
+        const startTime = performance.now();
+        for (let i = 1; i < bars.length; i++) {
+          let j = i - 1;
+          const key = bars[i].style.height;
+          bars[i].style.backgroundColor = "red";
+          while (j >= 0 && parseInt(bars[j].style.height) > parseInt(key)) {
+            bars[j + 1].style.height = bars[j].style.height;
+            bars[j].style.backgroundColor = "red";
+            await sleep(50);
+            bars[j].style.backgroundColor = "blue";
+            j--;
+          }
+          bars[j + 1].style.height = key;
+          bars[i].style.backgroundColor = "blue";
+        }
+        return performance.now() - startTime;
+      }
+
+      // Merge Sort Helper
+      async function mergeSort(bars) {
+        const startTime = performance.now();
+        await mergeSortHelper(bars, 0, bars.length - 1);
+        return performance.now() - startTime;
+      }
+
+      async function mergeSortHelper(bars, left, right) {
+        if (left >= right) return;
+        const mid = Math.floor((left + right) / 2);
+        await mergeSortHelper(bars, left, mid);
+        await mergeSortHelper(bars, mid + 1, right);
+        await merge(bars, left, mid, right);
+      }
+
+      async function merge(bars, left, mid, right) {
+        const temp = [];
+        for (let i = left; i <= right; i++) {
+          temp.push(parseInt(bars[i].style.height));
+        }
+        let i = 0,
+          j = mid - left + 1,
+          k = left;
+        while (i <= mid - left && j <= right - left) {
+          if (temp[i] <= temp[j]) {
+            bars[k++].style.height = `${temp[i++]}px`;
+          } else {
+            bars[k++].style.height = `${temp[j++]}px`;
+          }
+          await sleep(50);
+        }
+        while (i <= mid - left) {
+          bars[k++].style.height = `${temp[i++]}px`;
+          await sleep(50);
+        }
+        while (j <= right - left) {
+          bars[k++].style.height = `${temp[j++]}px`;
+          await sleep(50);
+        }
+      }
+
+      // Quick Sort
+      async function quickSort(bars) {
+        const startTime = performance.now();
+        await quickSortHelper(bars, 0, bars.length - 1);
+        return performance.now() - startTime;
+      }
+
+      async function quickSortHelper(bars, low, high) {
+        if (low >= high) return;
+        const pivotIndex = await partition(bars, low, high);
+        await quickSortHelper(bars, low, pivotIndex - 1);
+        await quickSortHelper(bars, pivotIndex + 1, high);
+      }
+
+      async function partition(bars, low, high) {
+        const pivot = parseInt(bars[high].style.height);
+        let i = low - 1;
+        bars[high].style.backgroundColor = "red";
+        for (let j = low; j < high; j++) {
+          bars[j].style.backgroundColor = "red";
+          await sleep(50);
+          if (parseInt(bars[j].style.height) < pivot) {
+            i++;
+            [bars[i].style.height, bars[j].style.height] = [
+              bars[j].style.height,
+              bars[i].style.height,
+            ];
+          }
+          bars[j].style.backgroundColor = "blue";
+        }
+        [bars[i + 1].style.height, bars[high].style.height] = [
+          bars[high].style.height,
+          bars[i + 1].style.height,
+        ];
+        bars[high].style.backgroundColor = "blue";
+        return i + 1;
+      }
+
+      // Start button event
+      startBtn.addEventListener("click", async () => {
+        graphsContainer.innerHTML = "";
+        resultsContainer.innerHTML = "";
+
+        const selectedAlgorithms = Array.from(algorithmCheckboxes)
+          .filter((checkbox) => checkbox.checked)
+          .map((checkbox) => checkbox.value);
+
+        if (selectedAlgorithms.length < 2) {
+          alert("Please select at least two algorithms to compare!");
+          return;
+        }
+
+        const arraySize = parseInt(arraySizeInput.value);
+        const initialBars = generateBars(arraySize);
+        const timings = [];
+
+        for (const algorithm of selectedAlgorithms) {
+          const bars = [...initialBars];
+          const graphBars = createGraph(algorithm, bars);
+          let timeTaken;
+          if (algorithm === "bubble") timeTaken = await bubbleSort(graphBars);
+          else if (algorithm === "selection")
+            timeTaken = await selectionSort(graphBars);
+          else if (algorithm === "insertion")
+            timeTaken = await insertionSort(graphBars);
+          else if (algorithm === "merge")
+            timeTaken = await mergeSort(graphBars);
+          else if (algorithm === "quick")
+            timeTaken = await quickSort(graphBars);
+          timings.push({ algorithm, timeTaken });
+        }
+
+        const sortedTimings = timings.sort((a, b) => a.timeTaken - b.timeTaken);
+        resultsContainer.innerHTML = `
+        <p><strong>Results:</strong></p>
+        ${sortedTimings
+          .map(
+            (result) => `
+          <p>${result.algorithm} took ${result.timeTaken.toFixed(2)} ms</p>
+        `
+          )
+          .join("")}
+        <p>The fastest algorithm is <strong>${
+          sortedTimings[0].algorithm
+        }</strong>.</p>
+      `;
+      });
+
+      // Reset button event
+      resetBtn.addEventListener("click", () => {
+        graphsContainer.innerHTML = "";
+        resultsContainer.innerHTML = "";
+      });
+    </script>
+  </body>
+</html>
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+  }
+
+  body {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #333;
+    text-align: center;
+  }
+
+  .container {
+    background: white;
+    width: 90%;
+    max-width: 1200px;
+    border-radius: 10px;
+    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    color: #2575fc;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+
+  .controls {
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .controls label {
+    font-size: 1.1rem;
+    color: #666;
+  }
+
+  .controls button,
+  .controls input[type="number"] {
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: #2575fc;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+  }
+
+  .controls input[type="number"] {
+    width: 100px;
+  }
+
+  .controls button {
+    width: 250px;
+    margin-top: 10px;
+  }
+
+  .controls button:hover {
+    background: #00c6ff;
+  }
+
+  fieldset {
+    border: none;
+    padding: 0;
+  }
+
+  legend {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 10px;
+  }
+
+  .algorithm-checkbox {
+    margin-right: 10px;
+  }
+
+  .graphs-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: 20px;
+  }
+
+  .graph {
+    flex: 1 1 calc(50% - 40px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f9f9f9;
+    max-height: 300px;
+    overflow: hidden;
+  }
+
+  .bars-container {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 5px;
+    height: 200px;
+  }
+
+  .bar {
+    width: 20px;
+    background: linear-gradient(to top, #2575fc, #00c6ff);
+    border-radius: 5px;
+    transition: height 0.4s ease, background-color 0.3s ease;
+  }
+
+  .results {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #444;
+  }
+
+  /* Media Queries for Mobile */
+  @media (max-width: 768px) {
+    .container {
+      padding: 20px;
+      width: 95%;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .controls {
+      align-items: center;
+    }
+
+    .controls input[type="number"] {
+      width: 60px;
+    }
+
+    .controls button {
+      width: 200px;
+    }
+
+    .graphs-container {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .graph {
+      flex: 1 1 100%;
+      margin-bottom: 20px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .controls label {
+      font-size: 1rem;
+    }
+
+    .controls input[type="number"],
+    .controls button {
+      padding: 10px;
+      font-size: 0.9rem;
+    }
+
+    .controls button {
+      width: 180px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+    }
+  }
+</style>
